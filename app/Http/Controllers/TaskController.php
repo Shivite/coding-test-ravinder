@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Models\Task;
+use Illuminate\Http\Request;
 
 class TaskController extends Controller
 {
@@ -19,7 +20,7 @@ class TaskController extends Controller
      */
     public function index()
     {
-        return \App\Models\Phase::with('tasks.user')->get();
+        return \App\Models\Phase::with('tasks.user')->withCount('tasks')->get();
     }
 
     /**
@@ -60,7 +61,8 @@ class TaskController extends Controller
      */
     public function edit(Task $task)
     {
-        //
+        $task = Task::find($task->id);
+        return response()->json($task);
     }
 
     /**
@@ -68,7 +70,7 @@ class TaskController extends Controller
      */
     public function update(UpdateTaskRequest $request, Task $task)
     {
-        //
+        $task->update($request->validated());
     }
 
     /**

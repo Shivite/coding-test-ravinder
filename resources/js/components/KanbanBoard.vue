@@ -2,10 +2,11 @@
     <div class="max-w-7xl flex-1 mx-auto flex flex-col overflow-auto sm:px-6 lg:px-8">
         <div class="w-full mb-6 flex">
             <Teleport to="body">
-                <generic-modal :show="kanban.creatingTask" @close="kanban.creatingTask = false" key="createTaskModal">
+                <generic-modal :show="kanban.creatingTask||kanban.editingTask" @close="kanban.creatingTask = false" key="createTaskModal">
                     <div>
                         <div class="mt-3 sm:mt-2">
-                            <DialogTitle as="h3" class="mb-6 text-base font-semibold leading-6 text-gray-900">Create a new task</DialogTitle>
+                            <DialogTitle as="h3" class="mb-6 text-base font-semibold leading-6 text-gray-900">
+                                {{ kanban.creatingTask ? 'Create' : 'Edit' }} task</DialogTitle>
                             <div>
                                 <label for="name" class="block text-sm font-medium leading-6 text-gray-900">Task description</label>
                                 <div class="relative mt-2">
@@ -76,7 +77,7 @@
                         <div class="mt-5 sm:mt-6">
                             <button type="button"
                                 class="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-                                @click="addCard()">Add the card!</button>
+                                @click="addOrEditCard(kanban?.selectedTask?.id ? kanban?.selectedTask?.id : null)">{{ kanban?.selectedTask?.id ? `Update${kanban?.selectedTask?.id}`: 'Add' }} the card!</button>
                         </div>
                     </div>
                 </generic-modal>
@@ -93,9 +94,10 @@
 
         <!-- Modal to edit the selected card -->
         <Teleport to="body">
-            <generic-modal v-if="kanban.hasSelectedTask()" @close="kanban.unselectTask()">
+            <generic-modal v-if="kanban.hasSelectedTask()">
                 <div class="relative">
                     <TrashIcon class="w-6 h-6 absolute top-0 right-0 hover:cursor-pointer" @click="deleteCard(kanban.selectedTask.id)" />
+                    <PencilSquareIcon class="w-6 h-6 absolute top-0 right-8 hover:cursor-pointer" @click="editTask(kanban.selectedTask.id)" />
                     <div class="flex justify-center">
                         <img class="w-16 h-16 shadow-lg rounded-full border-2 border-blue-800"
                             :src="getAvatar(kanban.selectedTask.user)" :alt="kanban.selectedTask.user.name" />
@@ -124,7 +126,7 @@
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useKanbanStore } from '../stores/kanban'
 import { DialogTitle, Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from '@headlessui/vue'
-import { CheckIcon, ChevronUpDownIcon, TrashIcon } from '@heroicons/vue/20/solid'
+import { CheckIcon, ChevronUpDownIcon, TrashIcon, PencilSquareIcon } from '@heroicons/vue/20/solid'
 import { sha256 } from 'js-sha256';
 
 
@@ -157,7 +159,6 @@ const hasError = function (field) {
 // Define these functions outside of onMounted so they're in the component's scope
 let pos = { top: 0, left: 0, x: 0, y: 0 };
 let ele;
-
 const mouseDownHandler = function (e) {
     ele.style.cursor = 'grabbing';
     ele.style.userSelect = 'none';
@@ -231,15 +232,24 @@ const getSelf = async () => {
     }
 }
 
-const addCard = async () => {
+const addOrEditCard = async (taskId) => {
     try {
-        const response = await axios.post('/api/tasks', kanban.creatingTaskProps);
+        let apiUrl = taskId ? `api/tasks/${taskId}` : `/api/tasks`;
+        let taskRequest = {
+            name: kanban.creatingTaskProps.name,
+            phase_id: kanban.creatingTaskProps.phase_id,
+            user_id: kanban.creatingTaskProps.user_id
+        }
+        const response = await (taskId ? axios.put(apiUrl, taskRequest) : axios.post(apiUrl, taskRequest));
+        console.log("test--",response)
+        kanban.editingTask = false;
         kanban.creatingTask = false;
         kanban.creatingTaskProps = {
             name: null,
             phase_id: null,
             user_id: null
         };
+        kanban.unselectTask();
         await refreshTasks();
     } catch (error) {
         if (error.response.status === 422) {
@@ -247,6 +257,27 @@ const addCard = async () => {
         }
     }
 }
+
+const editTask = async (id) => {
+    try {
+        const response = await axios.get(`tasks/${id}/edit`,);
+        kanban.editingTask = true;
+        if(response?.data){
+            kanban.creatingTaskProps = true;
+            kanban.creatingTaskProps = {
+                name: response?.data?.name,
+                phase_id: response?.data?.phase_id,
+                user_id: response?.data?.user_id
+            };
+        }
+    } catch (error) {
+        if (error.response.status === 422) {
+            errors.value = error.response.data.errors;
+        }
+    }
+}
+
+
 
 const deleteCard = async (id) => {
     try {

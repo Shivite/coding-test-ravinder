@@ -17,8 +17,11 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
-Route::middleware('auth:sanctum')->get('/tasks', [App\Http\Controllers\TaskController::class, 'index']);
-Route::middleware('auth:sanctum')->post('/tasks', [App\Http\Controllers\TaskController::class, 'store']);
-Route::middleware('auth:sanctum')->delete('/tasks/{task}', [App\Http\Controllers\TaskController::class, 'destroy']);
 Route::middleware('auth:sanctum')->get('/users', [App\Http\Controllers\TaskController::class, 'users']);
 Route::middleware('auth:sanctum')->get('/phases/{phase}', [App\Http\Controllers\PhaseController::class, 'show']);
+Route::middleware('auth:sanctum')->put('/phases/{phase}', [App\Http\Controllers\PhaseController::class, 'update']);
+// wrap taskcontroler default crud routes within a route group and specify the middleware 
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::resource('tasks', 'App\Http\Controllers\TaskController');
+});
+Route::middleware('auth:sanctum')->put('/Phases/{phase}/mark-tasks-completed', [App\Http\Controllers\PhaseController::class, 'markTasksCompleted']);

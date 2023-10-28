@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePhaseRequest;
 use App\Http\Requests\UpdatePhaseRequest;
 use App\Models\Phase;
+use Illuminate\Support\Facades\Log;
 
 class PhaseController extends Controller
 {
@@ -62,5 +63,28 @@ class PhaseController extends Controller
     public function destroy(Phase $phase)
     {
         //
+    }
+
+    public function markTasksCompleted(UpdatePhaseRequest $request, Phase $phase)
+    {
+        try {
+            if ($phase->id) {
+                if (!$phase->tasks->isEmpty()) {
+                    $phase->tasks->each(function ($task) {
+                        if (is_null($task->completed_at)) {
+                            $task->update(['completed_at' => now()]);
+                        }
+                    });
+                }
+                flash('Tasks marked as completed')->success();
+
+                return response()->json(['message' => 'Tasks marked as completed'], 200);
+            }
+        } catch (\Exception $e) {
+            \Log::error($e->getMessage());
+            flash('An error occurred while completing tasks')->error();
+            return response()->json(['error' => 'An error occurred while completing tasks'], 500);
+        }
+        
     }
 }

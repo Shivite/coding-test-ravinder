@@ -12,6 +12,7 @@ class Task extends Model
         'name',
         'phase_id',
         'user_id',
+        'completed_at'
     ];
 
     use HasFactory;

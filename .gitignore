@@ -20,3 +20,5 @@ yarn-error.log
 /database/laravel.sqlite
 supervisord.log
 supervisord.pid
+composer.json
+composer.lock
