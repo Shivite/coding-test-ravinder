@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Models\Phase;
 
 class UpdatePhaseRequest extends FormRequest
 {
@@ -11,7 +12,7 @@ class UpdatePhaseRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return auth()->check();
     }
 
     /**
