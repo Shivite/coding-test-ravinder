@@ -45,7 +45,13 @@ class TaskController extends Controller
     public function store(StoreTaskRequest $request)
     {
         // Create a new task from the $request
-        $task = Task::create($request->validated());
+        $validatedData = $request->validated();
+        $phase = \App\Models\Phase::find($request->phase_id);
+        if ($phase) {
+            if ($phase->completed) 
+                $validatedData['completed_at'] =  now();
+            $task = Task::create($validatedData);
+        }
     }
 
     /**
@@ -70,7 +76,17 @@ class TaskController extends Controller
      */
     public function update(UpdateTaskRequest $request, Task $task)
     {
-        $task->update($request->validated());
+        $validatedData = $request->validated();
+        $phase = \App\Models\Phase::find($request->phase_id);
+        if ($phase) {
+            if ($phase->completed) {
+                if (is_null($task->completed_at)) {
+                    $validatedData['completed_at'] =  now();
+                    $task->update($validatedData);
+                }
+            }else
+                $task->update($validatedData);
+        }
     }
 
     /**

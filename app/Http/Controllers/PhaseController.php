@@ -6,6 +6,7 @@ use App\Http\Requests\StorePhaseRequest;
 use App\Http\Requests\UpdatePhaseRequest;
 use App\Models\Phase;
 use Illuminate\Support\Facades\Log;
+use App\Events\FlashMessageEvent;
 
 class PhaseController extends Controller
 {
@@ -62,22 +63,35 @@ class PhaseController extends Controller
      */
     public function destroy(Phase $phase)
     {
-        //
+        try {
+            $phase = \App\Models\Phase::findOrFail($phase->id);
+            $phase->tasks()->delete();
+            $phase->delete();
+            return response()->json(['message' => 'Provided phase and related tasks are deleted!'], 200);
+        } catch (\Exception $e) {
+            \Log::error($e->getMessage());
+            return response()->json(['error' => 'An error occurred while completing tasks'], 500);
+        }
+        return redirect()->back()->with('message', 'Phase and related tasks have been deleted.');
     }
 
     public function markTasksCompleted(UpdatePhaseRequest $request, Phase $phase)
     {
         try {
-            if ($phase->id) {
+            if (!$phase->id || !$phase) 
+                return response()->json(['error' => 'This request is unprocessable.'], 500);
+            else{
+                // return $phase;
+                if($phase->completed)
+                    return response()->json(['error' => 'Provded phase is already completed.'], 500);
                 if (!$phase->tasks->isEmpty()) {
                     $phase->tasks->each(function ($task) {
                         if (is_null($task->completed_at)) {
                             $task->update(['completed_at' => now()]);
                         }
                     });
+                    $phase->update(['completed' => true]);
                 }
-                flash('Tasks marked as completed')->success();
-
                 return response()->json(['message' => 'Tasks marked as completed'], 200);
             }
         } catch (\Exception $e) {

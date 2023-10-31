@@ -20,6 +20,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::middleware('auth:sanctum')->get('/users', [App\Http\Controllers\TaskController::class, 'users']);
 Route::middleware('auth:sanctum')->get('/phases/{phase}', [App\Http\Controllers\PhaseController::class, 'show']);
 Route::middleware('auth:sanctum')->put('/phases/{phase}', [App\Http\Controllers\PhaseController::class, 'update']);
+Route::middleware('auth:sanctum')->delete('/phases/{phase}', [App\Http\Controllers\PhaseController::class, 'destroy']);
+Route::middleware('auth:sanctum')->get('/statistics', [App\Http\Controllers\StatisticsController::class, 'userStatistics']);
 // wrap taskcontroler default crud routes within a route group and specify the middleware 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('tasks', 'App\Http\Controllers\TaskController');
